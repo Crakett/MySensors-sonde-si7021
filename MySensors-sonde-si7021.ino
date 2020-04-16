@@ -1,4 +1,5 @@
 /* Sketch with Si7021 and battery monitoring
+ *  Version 1.1
 */
 //#define   MY_DEBUG
 //#define   MY_DEBUG_VERBOSE_RFM69
@@ -15,9 +16,11 @@
 #define   MY_RFM69_ENABLE_ENCRYPTION
 #define   MY_SECURITY_SIMPLE_PASSWD "x8Ig.R76FjKL;e"
 
-#define SKETCH_NAME "SI7021"
-#define SKETCH_VERSION "1.0"
+#define SKETCH_NAME "Si7021"
+#define SKETCH_VERSION "1.1"
 
+// ID static
+//#define NODE_ID 101             // <<<<<<<<<<<<<<<<<<<<<<<<<<<   Enter Node_ID
 
 #include <MySensors.h>
 #include <Wire.h>
@@ -38,7 +41,11 @@
 
 #define LED  A2
 
-//#define NODE_ID 101             // <<<<<<<<<<<<<<<<<<<<<<<<<<<   Enter Node_ID
+// bits pour l'ID
+#define POID_FAIBLE  4
+#define POID_FORT    9
+
+
 #define CHILD_ID_TEMP 0
 #define CHILD_ID_HUM 1
 #define SLEEP_TIME 15000            // 15s for DEBUG
@@ -87,6 +94,21 @@ void setup() {
   pinMode(LED,OUTPUT);
   digitalWrite(LED,LOW);
 
+}
+
+void before()
+{
+  uint8_t i;
+  uint8_t valueID=0;
+
+  for(i=POID_FAIBLE;i<POID_FORT;i++)
+  {
+    pinMode(i,INPUT_PULLUP);
+    if(digitalRead(i) == HIGH)  valueID += (i-POID_FAIBLE)^2;
+    pinMode(i,INPUT);   // to reduce consommation : no pullup
+  }
+  DEBUG_PRINT("nodeID by switch : "); DEBUG_PRINTLN(valueID);
+  if(valueID != 63)  transportAssignNodeID(valueID);  // set switch nodeID (1 to 62) only if different of 63 decimal (not all bit to 1)
 }
 
 void presentation()
