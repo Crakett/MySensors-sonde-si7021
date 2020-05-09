@@ -5,19 +5,18 @@
  *  - Optiboot external 1MHz BOD1.8V 4800baud
  *  
  *  si VALUE_DEBUG est défini
- *    - mesure temp et hum toutes les 10 sec
- *    - envoi temp et hum toutes les 30 sec max
+ *    - mesure temp et hum toutes les 2 sec
+ *    - envoi temp et hum toutes les 6 sec max
  *    - envoi temp si écart > 0.2°C
  *    - envoi hum si écart > 3%
- *    - envoi niveau pile toutes les 30 sec
+ *    - envoi niveau pile toutes les 10 sec
  *  
  *  sinon
  *    - mesure temp et hum toutes les 2 min
- *    - envoi temp et hum toutes les 10 min max
+ *    - envoi temp et hum toutes les 4 min max
  *    - envoi temp si écart > 0.2°C
  *    - envoi hum si écart > 3%
- *    - envoi niveau pile toutes les 6 heures  
- *  
+ *    - envoi niveau pile toutes les 1 heures  
  *  
  *  Gestion de la LED (pin 3)
  *    - 1 pulse : aucun envoi
@@ -34,9 +33,13 @@
  *    - si valeurs 63 (aucun pont de soudure), alors nodeID automatique
  *  
  *  EVOLUTIONS
-*   V1.3  28/03/19
-*   - suppression MY_RFM69_ENABLE_ENCRYPTION
-*   - ajout MY_RFM69_IRQ_PIN
+ *   V1.4  09/05/2020
+ *   - ajout envoi tension pile
+ *   - fréquence envoie niveau pile et tension passe de toutes les 6h à toutes les 1h
+ *   - update MySensors : 2.3.2
+ *   V1.3  28/03/19
+ *   - suppression MY_RFM69_ENABLE_ENCRYPTION
+ *   - ajout MY_RFM69_IRQ_PIN
  *  - limitation à 100 du % batterie
  *  
  *  
@@ -56,12 +59,8 @@
 #define   MY_RFM69_NEW_DRIVER
 #define   MY_RFM69_TX_POWER_DBM (5)
 
-// chiffrement 
-//#define   MY_RFM69_ENABLE_ENCRYPTION
-//#define   MY_SECURITY_SIMPLE_PASSWD "x8Ig.R76FjKL;e"
-
 #define SKETCH_NAME "Sonde T&H - Si7021"
-#define SKETCH_VERSION "1.3"
+#define SKETCH_VERSION "1.4"
 
 // ID static
 //#define NODE_ID 101             // <<<<<<<<<<<<<<<<<<<<<<<<<<<   Enter Node_ID
@@ -93,7 +92,8 @@
 
 
 #define CHILD_ID_TEMP 0
-#define CHILD_ID_HUM 1
+#define CHILD_ID_HUM  1
+#define CHILD_ID_BATT 2
 
 #ifdef VALUE_DEBUG
 #define SLEEP_TIME 2000              // 2000 ms ==> 2 sec
@@ -104,10 +104,13 @@
 #else
 #define SLEEP_TIME 120000            // 120000 ms ==> 120 sec ==> 2 min
 #define FORCE_TRANSMIT_CYCLE 2       // 2*2 ==> 4 min ; force l'envoi de la température et humudité toutes les 4 min max 
-#define BATTERY_REPORT_CYCLE 180     // 180*2 ==> 360 min ; 360/60 ==> 6 h ; une fois toutes les 6h
+#define BATTERY_REPORT_CYCLE 30      // 30*2 ==> 60 min ; 60/60 ==> 1 h ; une fois toutes les 1h
 #define HUMI_TRANSMIT_THRESHOLD 3.0  // seuil pour envoi humidité
 #define TEMP_TRANSMIT_THRESHOLD 0.2  // seuil pour envoi température
 #endif
+
+
+
 
 // tensions min max pile
 #define VMIN 1900
@@ -120,8 +123,9 @@ int lastHumidity = -100;             // to make it report the first time.
 
 SI7021 tempEtHumSensor;
 
-MyMessage msgTemp(CHILD_ID_TEMP, V_TEMP); // Initialize temperature et humidité message
+MyMessage msgTemp(CHILD_ID_TEMP, V_TEMP); // Initialize temperature, humidité message et pile message
 MyMessage msgHum(CHILD_ID_HUM, V_HUM);
+MyMessage msgBatt(CHILD_ID_BATT, V_VOLTAGE);
 
 void setup() {
   //DEBUG_SERIAL(4800);    // <<<<<<<<<<<<<<<<<<<<<<<<<< Note BAUD_RATE in MySensors.h
@@ -172,6 +176,7 @@ void presentation()
   sendSketchInfo(SKETCH_NAME, SKETCH_VERSION);
   present(CHILD_ID_TEMP, S_TEMP);   // Present sensor to controller
   present(CHILD_ID_HUM, S_HUM);
+  present(CHILD_ID_BATT, S_MULTIMETER);
 }
 
 void loop() {
@@ -239,8 +244,6 @@ void sendTempHumidityMeasurements() {
 }
 
 
-
-
 /***************************************************************************************************
  * envoi le niveau de la pile
  ***************************************************************************************************/
@@ -261,7 +264,9 @@ void sendBatteryPercent() {
     if(!sendBatteryLevel(batteryPcnt,false)) {
       DEBUG_PRINTLN(F("ERREUR envoi niveau batterie"));
     }
-    
+    if(!send(msgBatt.set(batteryVolt),false)) {
+      DEBUG_PRINTLN(F("ERREUR envoi tension pile"));
+    }
     batteryReportCounter = 0;
   }
   
