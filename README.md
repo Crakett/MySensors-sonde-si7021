@@ -2,4 +2,3 @@
 Sonde de température et humidité basé sur Arduino pro mini + sonde Si7021 + RFM69HW
 C'est un projet comencé en septembre 2018.
 
-J'ai fait 4 versions du logiciel, je le dépose sur Git.
