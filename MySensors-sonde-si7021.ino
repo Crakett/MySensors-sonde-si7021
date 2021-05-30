@@ -32,22 +32,11 @@
  *    - pin à la masse : bit à 0
  *    - si valeurs 63 (aucun pont de soudure), alors nodeID automatique
  *  
- *  EVOLUTIONS
- *   V1.4  09/05/2020
- *   - ajout envoi tension pile
- *   - fréquence envoie niveau pile et tension passe de toutes les 6h à toutes les 1h
- *   - update MySensors : 2.3.2
- *   V1.3  28/03/19
- *   - suppression MY_RFM69_ENABLE_ENCRYPTION
- *   - ajout MY_RFM69_IRQ_PIN
- *  - limitation à 100 du % batterie
- *  
  *  
 */
 //#define   MY_DEBUG
 //#define   MY_DEBUG_VERBOSE_RFM69
-#define MY_BAUD_RATE 4800
-//#define DEBUG_ON            // Rain gauge specific debug messages.
+#define   MY_BAUD_RATE 4800
 
 //#define VALUE_DEBUG
 
@@ -59,8 +48,8 @@
 #define   MY_RFM69_NEW_DRIVER
 #define   MY_RFM69_TX_POWER_DBM (5)
 
-#define SKETCH_NAME "Sonde T&H - Si7021"
-#define SKETCH_VERSION "1.4"
+#define SKETCH_NAME "Sonde T et H - Si7021"
+#define SKETCH_VERSION "1.6"
 
 // ID static
 //#define NODE_ID 101             // <<<<<<<<<<<<<<<<<<<<<<<<<<<   Enter Node_ID
@@ -94,11 +83,12 @@
 #define CHILD_ID_TEMP 0
 #define CHILD_ID_HUM  1
 #define CHILD_ID_BATT 2
+#define CHILD_ID_CPT  3
 
 #ifdef VALUE_DEBUG
 #define SLEEP_TIME 2000              // 2000 ms ==> 2 sec
 #define FORCE_TRANSMIT_CYCLE 3       // 3*2 ==> 6 sec ; force l'envoi de la température et humudité toutes les 6 sec max 
-#define BATTERY_REPORT_CYCLE 5       // 5*2 ==> 10 sec ; une fois toutes les 10 sec
+#define BATTERY_REPORT_CYCLE 30      // 30*2 ==> 60 sec ; une fois toutes les 60 sec
 #define HUMI_TRANSMIT_THRESHOLD 3.0  // seuil pour envoi humidité
 #define TEMP_TRANSMIT_THRESHOLD 0.2  // seuil pour envoi température
 #else
@@ -106,26 +96,28 @@
 #define FORCE_TRANSMIT_CYCLE 2       // 2*2 ==> 4 min ; force l'envoi de la température et humudité toutes les 4 min max 
 #define BATTERY_REPORT_CYCLE 30      // 30*2 ==> 60 min ; 60/60 ==> 1 h ; une fois toutes les 1h
 #define HUMI_TRANSMIT_THRESHOLD 3.0  // seuil pour envoi humidité
-#define TEMP_TRANSMIT_THRESHOLD 0.2  // seuil pour envoi température
+#define TEMP_TRANSMIT_THRESHOLD 0.1  // seuil pour envoi température
 #endif
 
 
-
+const int DELAI_TRANS = 200;       // 200 ms d'attente après chaque send()
 
 // tensions min max pile
-#define VMIN 1900
+#define VMIN 2100
 #define VMAX 3000
 
 int batteryReportCounter = BATTERY_REPORT_CYCLE;  // to make it report the first time.
 int measureCount = 0;
 float lastTemperature = -100;        // to make it report the first time.
 int lastHumidity = -100;             // to make it report the first time.
+unsigned long compteur; 
 
 SI7021 tempEtHumSensor;
 
 MyMessage msgTemp(CHILD_ID_TEMP, V_TEMP); // Initialize temperature, humidité message et pile message
 MyMessage msgHum(CHILD_ID_HUM, V_HUM);
 MyMessage msgBatt(CHILD_ID_BATT, V_VOLTAGE);
+MyMessage msgCpt(CHILD_ID_CPT, V_TEXT);
 
 void setup() {
   //DEBUG_SERIAL(4800);    // <<<<<<<<<<<<<<<<<<<<<<<<<< Note BAUD_RATE in MySensors.h
@@ -149,6 +141,8 @@ void setup() {
 #else
   pulseLed(1);
 #endif
+
+ compteur=1;
 
  delay(1000); // attente avant 1er envoi temp/hum/batt
 
@@ -174,9 +168,10 @@ void before()
 void presentation()
 {
   sendSketchInfo(SKETCH_NAME, SKETCH_VERSION);
-  present(CHILD_ID_TEMP, S_TEMP);   // Present sensor to controller
-  present(CHILD_ID_HUM, S_HUM);
-  present(CHILD_ID_BATT, S_MULTIMETER);
+  present(CHILD_ID_TEMP, S_TEMP); delay(DELAI_TRANS);
+  present(CHILD_ID_HUM, S_HUM); delay(DELAI_TRANS);
+  present(CHILD_ID_BATT, S_MULTIMETER); delay(DELAI_TRANS);
+  present(CHILD_ID_CPT, S_INFO); delay(DELAI_TRANS);
 }
 
 void loop() {
@@ -203,7 +198,7 @@ void sendTempHumidityMeasurements() {
     forceTransmit = true;  // force la transmission
     measureCount = 0;
   }
-  
+ 
   si7021_thc data = tempEtHumSensor.getTempAndRH();
 
   float temperature = data.celsiusHundredths / 100.0;
@@ -216,7 +211,7 @@ void sendTempHumidityMeasurements() {
     if(!send(msgTemp.set(temperature, 1),false)) {
       DEBUG_PRINTLN(F("ERREUR envoi température"));
     }
-    
+    delay(DELAI_TRANS);
     lastTemperature = temperature;
     
     nbPulse += 1;                    // 2 pulse si envoi Temp
@@ -233,7 +228,7 @@ void sendTempHumidityMeasurements() {
     if(!send(msgHum.set(humidity),false)) {
       DEBUG_PRINTLN(F("ERREUR envoi humidité"));
     }
-    
+    delay(DELAI_TRANS);
     lastHumidity = humidity;
     nbPulse += 2;                    // 3 pulse si envoi Hum, 4 pulse si envoi Temp + Hum
     DEBUG_PRINTLN("H sent!");
@@ -264,9 +259,13 @@ void sendBatteryPercent() {
     if(!sendBatteryLevel(batteryPcnt,false)) {
       DEBUG_PRINTLN(F("ERREUR envoi niveau batterie"));
     }
+    delay(DELAI_TRANS);
     if(!send(msgBatt.set(batteryVolt),false)) {
       DEBUG_PRINTLN(F("ERREUR envoi tension pile"));
     }
+    delay(DELAI_TRANS);
+    send(msgCpt.set(compteur),false);delay(DELAI_TRANS);
+    compteur++;
     batteryReportCounter = 0;
   }
   
