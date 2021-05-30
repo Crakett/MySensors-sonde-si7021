@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:pro",
+    "sketch": "MySensors-sonde-si7021.ino",
+    "configuration": "cpu=RC1MHZatmega328"
+}
