@@ -1,45 +1,11 @@
-
-/* Sketch with Si7021 and battery monitoring
- *  
- *  cible
- *  - ARDUINO PRO MINI 3.3v 8Mhz modifié (retrait régulateur, led alim)
- *  - Optiboot external 1MHz BOD1.8V 4800baud
- *  
- *  si VALUE_DEBUG est défini
- *    - mesure temp et hum toutes les 2 sec
- *    - envoi temp et hum toutes les 6 sec max
- *    - envoi temp si écart > 0.2°C
- *    - envoi hum si écart > 3%
- *    - envoi niveau pile toutes les 10 sec
- *  
- *  sinon
- *    - mesure temp et hum toutes les 2 min
- *    - envoi temp et hum toutes les 4 min max
- *    - envoi temp si écart > 0.2°C
- *    - envoi hum si écart > 3%
- *    - envoi niveau pile toutes les 1 heures  
- *  
- *  Gestion de la LED (pin 3)
- *    - 1 pulse : aucun envoi
- *    - 2 pulse : envoi temp 
- *    - 3 pulse : envoi hum
- *    - 4 pulse : envoi temp et hum
- *    
- *    - au reset : 1 pulse pour valeur normal ; 2 pulse pour indiquer valeur de DEBUG
- *  
- *  Gestion du MySensors Node ID Static par switch
- *    - bit 4 à 9 ==> poid binaire 0 à 5 ==> valeurs 0 à 63
- *    - pin en l'air : bit à 1
- *    - pin à la masse : bit à 0
- *    - si valeurs 63 (aucun pont de soudure), alors nodeID automatique
- *  
- *  
-*/
-//#define   MY_DEBUG
+/************************************ 
+ Zone de définition pour DEBUG
+*************************************/
+//#define   MY_DEBUG_PRINT
 //#define   MY_DEBUG_VERBOSE_RFM69
-#define   MY_BAUD_RATE 4800
+//#define   VALUE_DEBUG
 
-//#define VALUE_DEBUG
+#define   MY_BAUD_RATE 4800
 
 // For RFM69
 #define   MY_RADIO_RFM69
@@ -50,10 +16,7 @@
 #define   MY_RFM69_TX_POWER_DBM (5)
 
 #define SKETCH_NAME "Sonde T et H - Si7021"
-#define SKETCH_VERSION "1.6"
-
-// ID static
-//#define NODE_ID 101             // <<<<<<<<<<<<<<<<<<<<<<<<<<<   Enter Node_ID
+#define SKETCH_VERSION "1.7"
 
 #include <MySensors.h>
 
@@ -61,15 +24,6 @@
 #include <SI7021.h>
 #include <SPI.h>
 
-#ifdef MY_DEBUG
-#define DEBUG_SERIAL(x) Serial.begin(x)
-#define DEBUG_PRINT(x) Serial.print(x)
-#define DEBUG_PRINTLN(x) Serial.println(x)
-#else
-#define DEBUG_SERIAL(x)
-#define DEBUG_PRINT(x)
-#define DEBUG_PRINTLN(x)
-#endif
 
 // pour la gestion de la LED
 #define LED_PIN   3
@@ -81,11 +35,9 @@
 #define POID_FAIBLE  4
 #define POID_FORT    9
 
-
 #define CHILD_ID_TEMP 0
 #define CHILD_ID_HUM  1
 #define CHILD_ID_BATT 2
-#define CHILD_ID_CPT  3
 
 #ifdef VALUE_DEBUG
 #define SLEEP_TIME 2000              // 2000 ms ==> 2 sec
@@ -104,6 +56,16 @@
 #include <MyConfig.h>
 #include <MySensors.h>
 
+#ifdef MY_DEBUG_PRINT
+#define DEBUG_SERIAL(x) Serial.begin(x)
+#define DEBUG_PRINT(x) Serial.print(x)
+#define DEBUG_PRINTLN(x) Serial.println(x)
+#else
+#define DEBUG_SERIAL(x)
+#define DEBUG_PRINT(x)
+#define DEBUG_PRINTLN(x)
+#endif
+
 const int DELAI_TRANS = 200;       // 200 ms d'attente après chaque send()
 
 // tensions min max pile
@@ -114,14 +76,12 @@ int batteryReportCounter = BATTERY_REPORT_CYCLE;  // to make it report the first
 int measureCount = 0;
 float lastTemperature = -100;        // to make it report the first time.
 int lastHumidity = -100;             // to make it report the first time.
-uint32_t compteur; 
 
 SI7021 tempEtHumSensor;
 
 MyMessage msgTemp(CHILD_ID_TEMP, V_TEMP); // Initialize temperature, humidité message et pile message
 MyMessage msgHum(CHILD_ID_HUM, V_HUM);
 MyMessage msgBatt(CHILD_ID_BATT, V_VOLTAGE);
-MyMessage msgCpt(CHILD_ID_CPT, V_TEXT);
 
 void setup() {
   //DEBUG_SERIAL(4800);    // <<<<<<<<<<<<<<<<<<<<<<<<<< Note BAUD_RATE in MySensors.h
@@ -145,8 +105,6 @@ void setup() {
 #else
   pulseLed(1);
 #endif
-
- compteur=1;
 
  delay(1000); // attente avant 1er envoi temp/hum/batt
 
@@ -175,7 +133,6 @@ void presentation()
   present(CHILD_ID_TEMP, S_TEMP); delay(DELAI_TRANS);
   present(CHILD_ID_HUM, S_HUM); delay(DELAI_TRANS);
   present(CHILD_ID_BATT, S_MULTIMETER); delay(DELAI_TRANS);
-  present(CHILD_ID_CPT, S_INFO); delay(DELAI_TRANS);
 }
 
 void loop() {
@@ -268,8 +225,6 @@ void sendBatteryPercent() {
       DEBUG_PRINTLN(F("ERREUR envoi tension pile"));
     }
     delay(DELAI_TRANS);
-    send(msgCpt.set(compteur),false);delay(DELAI_TRANS);
-    compteur++;
     batteryReportCounter = 0;
   }
   
