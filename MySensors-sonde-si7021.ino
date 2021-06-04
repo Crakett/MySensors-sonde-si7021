@@ -15,8 +15,8 @@
 #define   MY_RFM69_NEW_DRIVER
 #define   MY_RFM69_TX_POWER_DBM (5)
 
-#define SKETCH_NAME "Sonde T et H - Si7021"
-#define SKETCH_VERSION "1.7"
+#define   SKETCH_NAME "Sonde T et H - Si7021"
+#define   SKETCH_VERSION "1.7"
 
 #include <MySensors.h>
 
@@ -47,8 +47,8 @@
 #define TEMP_TRANSMIT_THRESHOLD 0.2  // seuil pour envoi température
 #else
 #define SLEEP_TIME 120000            // 120000 ms ==> 120 sec ==> 2 min
-#define FORCE_TRANSMIT_CYCLE 2       // 2*2 ==> 4 min ; force l'envoi de la température et humudité toutes les 4 min max 
-#define BATTERY_REPORT_CYCLE 30      // 30*2 ==> 60 min ; 60/60 ==> 1 h ; une fois toutes les 1h
+#define FORCE_TRANSMIT_CYCLE 5       // 5*2 ==> 10 min ; force l'envoi de la température et humudité toutes les 10 min max 
+#define BATTERY_REPORT_CYCLE 180     // 180*2 ==> 360 min ; 360/60 ==> 6 h ; une fois toutes les 6 h
 #define HUMI_TRANSMIT_THRESHOLD 3.0  // seuil pour envoi humidité
 #define TEMP_TRANSMIT_THRESHOLD 0.1  // seuil pour envoi température
 #endif
@@ -83,19 +83,21 @@ MyMessage msgTemp(CHILD_ID_TEMP, V_TEMP); // Initialize temperature, humidité m
 MyMessage msgHum(CHILD_ID_HUM, V_HUM);
 MyMessage msgBatt(CHILD_ID_BATT, V_VOLTAGE);
 
-void setup() {
-  //DEBUG_SERIAL(4800);    // <<<<<<<<<<<<<<<<<<<<<<<<<< Note BAUD_RATE in MySensors.h
-  DEBUG_PRINTLN("Serial started");
 
-  DEBUG_PRINT("Voltage: ");
+/***************************************************************************************************
+ * Setup code
+ ***************************************************************************************************/
+
+void setup() {
+  //DEBUG_SERIAL(4800);    // <<<<<<<< Note BAUD_RATE in MySensors.h
+
+  delay(2500);    // délai à la mise sous tension
+
+  DEBUG_PRINTLN(F("Serial started"));
+  DEBUG_PRINT(F("Voltage: "));
   DEBUG_PRINT(readVcc());
   DEBUG_PRINTLN(" mV");
-
-  delay(500); // Allow time for radio if power useed as reset
-
-  DEBUG_PRINT("Node and ");
-  DEBUG_PRINTLN("2 children presented.");
-
+  
   pinMode(LED_PIN,OUTPUT);
   digitalWrite(LED_PIN,LOW);
 
@@ -109,6 +111,11 @@ void setup() {
  delay(1000); // attente avant 1er envoi temp/hum/batt
 
 }
+
+
+/***************************************************************************************************
+ * Lecture de la valeur de l'ID de la sonde pour le réseau MySensors
+ ***************************************************************************************************/
 
 #ifdef SWITCH_FOR_ID
 void before()
@@ -127,6 +134,11 @@ void before()
 }
 #endif
 
+
+/***************************************************************************************************
+ * Présentation MySensors
+ ***************************************************************************************************/
+
 void presentation()
 {
   sendSketchInfo(SKETCH_NAME, SKETCH_VERSION);
@@ -135,13 +147,17 @@ void presentation()
   present(CHILD_ID_BATT, S_MULTIMETER); delay(DELAI_TRANS);
 }
 
+
+/***************************************************************************************************
+ * Boucle principale
+ ***************************************************************************************************/
 void loop() {
 
   sendTempHumidityMeasurements();
 
   sendBatteryPercent();
 
-  sleep(SLEEP_TIME);
+  sleep(SLEEP_TIME);   // mise en mode très basse consommation
 }
 
 
@@ -159,7 +175,8 @@ void sendTempHumidityMeasurements() {
     forceTransmit = true;  // force la transmission
     measureCount = 0;
   }
- 
+
+  // lecture sonde température et humidité   
   si7021_thc data = tempEtHumSensor.getTempAndRH();
 
   float temperature = data.celsiusHundredths / 100.0;
