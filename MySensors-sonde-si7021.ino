@@ -9,14 +9,16 @@
 
 // For RFM69
 #define   MY_RADIO_RFM69
+#define   MY_RFM69_NEW_DRIVER
 #define   MY_RFM69_FREQUENCY RFM69_868MHZ
+//#define   MY_RFM69_FREQUENCY (867345000ul)
 #define   MY_IS_RFM69HW
 #define   MY_RFM69_IRQ_PIN   2
-#define   MY_RFM69_NEW_DRIVER
-#define   MY_RFM69_TX_POWER_DBM (5)
+#define   MY_RFM69_TX_POWER_DBM (10)
+#define   MY_RFM69_MAX_POWER_LEVEL_DBM (20)
 
 #define   SKETCH_NAME "Sonde T et H - Si7021"
-#define   SKETCH_VERSION "1.7"
+#define   SKETCH_VERSION "1.8"
 
 #include <MyConfig.h>
 #include <MySensors.h>
@@ -150,9 +152,9 @@ void before()
 void presentation()
 {
   sendSketchInfo(SKETCH_NAME, SKETCH_VERSION);
-  present(CHILD_ID_TEMP, S_TEMP); delay(DELAI_TRANS);
-  present(CHILD_ID_HUM, S_HUM); delay(DELAI_TRANS);
-  present(CHILD_ID_BATT, S_MULTIMETER); delay(DELAI_TRANS);
+  present(CHILD_ID_TEMP, S_TEMP,F("Temperature")); delay(DELAI_TRANS);
+  present(CHILD_ID_HUM, S_HUM,F("Humidite")); delay(DELAI_TRANS);
+  present(CHILD_ID_BATT, S_MULTIMETER,F("Pile")); delay(DELAI_TRANS);
 }
 
 

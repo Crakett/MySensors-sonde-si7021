@@ -41,6 +41,11 @@ Sketch with Si7021 and battery monitoring
 
 **Changelog**
 
+V1.8  13/10/2021
+- essai nouvelle frequence puis retour F par défaut
+- augmentation puissance
+- ajout libellés aux capteurs (température, humidité et pile)
+
 V1.7  16/07/2021
 - délai entre 2 envois Temp. et Hum. : 4 minutes mini, 12 minutes maxi
 - envoi niveau de batterie toutes les 6h
