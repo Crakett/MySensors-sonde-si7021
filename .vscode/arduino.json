@@ -3,5 +3,6 @@
     "board": "arduino:avr:pro",
     "sketch": "MySensors-sonde-si7021.ino",
     "output": "output",
-    "intelliSenseGen": "global"
+    "intelliSenseGen": "global",
+    "port": "/dev/cu.usbserial-A50285BI"
 }

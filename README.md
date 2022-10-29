@@ -9,13 +9,6 @@ Ce projet permet de réaliser une sonde température pour gèrer le chauffage de
 Sonde de température et humidité basé sur Arduino pro mini + sonde Si7021 + RFM69HW + pile CR123A
 C'est un projet commencé en septembre 2018.
 
-Modification en cours :
-- délai entre 2 envois
-- algoritme pour ne pas avoir d'alarme sonde dans jeedom si la température ne change pas
-
-
-
-
 Sketch with Si7021 and battery monitoring
   
   cible
@@ -30,11 +23,11 @@ Sketch with Si7021 and battery monitoring
     - envoi niveau pile toutes les 10 sec
   
   sinon
-    - mesure temp et hum toutes les 2 min
-    - envoi temp et hum toutes les 4 min max
-    - envoi temp si écart > 0.2°C
+    - mesure temp et hum toutes les 4 min
+    - envoi temp et hum toutes les 4 minutes min et 12 minutes max
+    - envoi temp si écart > 0.1°C
     - envoi hum si écart > 3%
-    - envoi niveau pile toutes les 1 heures  
+    - envoi niveau pile toutes les 6 heures  
   
   Signification de la LED (pin 3)
     - 1 pulse : aucun envoi
@@ -53,8 +46,17 @@ Sketch with Si7021 and battery monitoring
 
 **Changelog**
 
-V1.7  30/05/2021
-- en cours
+V1.8  13/10/2021
+- essai nouvelle frequence puis retour F par défaut
+- augmentation puissance
+- ajout libellés aux capteurs (température, humidité et pile)
+
+V1.7  16/07/2021
+- délai entre 2 envois Temp. et Hum. : 4 minutes mini, 12 minutes maxi
+- envoi niveau de batterie toutes les 6h
+- algoritme pour ne pas avoir d'alarme sonde dans jeedom si la température ne change pas (ajoute 0,1 °C à la température précédente)
+  (Sonde, Délai max entre 2 messages : 12 minutes), (Thermostat, Délai max entre 2 changements de température de la sonde : 12 minutes)
+- Si sonde HS (lecture température toujours la même), envoi de la même température au bout de 2h (pour avoir une erreur dans jeedom)
 
 V1.6  28/11/2020
 - Vmin passe de 1900 à 2100
