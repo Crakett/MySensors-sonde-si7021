@@ -1,7 +1,7 @@
 /************************************ 
  Zone de définition pour DEBUG
 *************************************/
-//#define   MY_DEBUG_PRINT
+#define   MY_DEBUG_PRINT
 //#define   MY_DEBUG_VERBOSE_RFM69
 //#define   VALUE_DEBUG
 
@@ -10,14 +10,15 @@
 // For RFM69
 #define   MY_RADIO_RFM69
 #define   MY_RFM69_NEW_DRIVER
-#define   MY_RFM69_FREQUENCY RFM69_868MHZ
+//#define   MY_RFM69_FREQUENCY RFM69_868MHZ
 //#define   MY_RFM69_FREQUENCY (867345000ul)
+#define   MY_RFM69_FREQUENCY RFM69_865MHZ
 #define   MY_IS_RFM69HW
 #define   MY_RFM69_IRQ_PIN   2
 #define   MY_RFM69_TX_POWER_DBM (10)
 #define   MY_RFM69_MAX_POWER_LEVEL_DBM (20)
 
-#define   SKETCH_NAME "Sonde T et H - Si7021"
+#define   SKETCH_NAME "Sonde TEST - Si7021"
 #define   SKETCH_VERSION "1.8"
 
 #include <MyConfig.h>
@@ -48,6 +49,7 @@
 #define BATTERY_REPORT_CYCLE 30      // 30*2 ==> 60 sec ; une fois toutes les 60 sec
 #define HUMI_TRANSMIT_THRESHOLD 3.0  // seuil pour envoi humidité
 #define TEMP_TRANSMIT_THRESHOLD 0.2  // seuil pour envoi température
+#define SAME_TEMP_THRESHOLD 30       // 30*4 ==> 120 min ; nombre de mesure de température identique pour déclencher panne sonde par envoi temp identique
 #else
 #define SLEEP_TIME 240000             // 240000 ms ==> 120 sec ==> 4 min ; mesure de la température et humidité toutes les 4 min
 #define FORCE_TRANSMIT_CYCLE 3       // 3*4 ==> 12 min ; force l'envoi de la température et humudité toutes les 12 min max (si n'a pas changé)

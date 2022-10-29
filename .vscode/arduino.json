@@ -4,5 +4,5 @@
     "sketch": "MySensors-sonde-si7021.ino",
     "output": "output",
     "intelliSenseGen": "global",
-    "port": "/dev/cu.usbserial-A50285BI"
+    "port": "/dev/tty.usbserial-A50285BI"
 }
