@@ -1,3 +1,8 @@
+*************************************************
+Cette brache de test permet d'effectuer des tests
+*************************************************
+
+
 # MySensors-sonde-si7021
 Ce projet permet de réaliser une sonde température pour gèrer le chauffage des pièces d'une maison par domotique.
 
@@ -45,9 +50,6 @@ Sketch with Si7021 and battery monitoring
     - pin à la masse : bit à 0
     - si valeurs 63 (aucun pont de soudure), alors nodeID automatique par MySensors
   
-
-
-
 
 **Changelog**
 
